@@ -1,0 +1,40 @@
+#include <stdio.h>
+#include <malloc.h>
+
+int Max = 0;
+int max(int len, int arr[])
+{
+    int i, End = 0;
+    for (i = 0; i < len; i++)
+    {
+        End += arr[i];
+        if (End > Max)
+        {
+            Max = End;
+        }
+        else if (End < 0) 
+        {
+            End = 0;
+        }
+    }
+    return Max;
+}
+
+int main() {
+    int i, a, * arr;
+    scanf_s("%d", &a);
+    if (a <= 0)
+        Max = 0;
+    else
+    {
+        arr = (int*)malloc(sizeof(int) * a);
+        for (i = 0; i < a; i++)
+        {
+            scanf_s("%d", &arr[i]);
+        }
+        max(a, arr);
+
+    }
+        printf("%d", Max);
+    return 0;
+}
