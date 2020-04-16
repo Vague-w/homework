@@ -1,0 +1,283 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include<stdio.h>
+#include<stdlib.h>
+int a[20];
+typedef struct BiTNode
+{
+	int data;
+	int height;
+	struct BiTNode *lchild,*rchild;
+}BiTNode,*BiTree;//二叉树的定义
+//data 为数据值，heigh为树高，lchild为左孩子，rchild为右孩子
+
+int GetHeight(BiTree T)//返回该节点的树高
+{
+	if(T)
+		return T->height ;
+	return 0;
+}
+int max(int a,int b)//判断左右子树高度大小返回较大值
+{
+	if(a>b)return a;
+	else
+		return b;
+}
+bool L_Rotate(BiTree &T)//右单旋
+{
+	BiTree lc;
+	lc=T->lchild ;
+	T->lchild =lc->rchild ;
+	lc->rchild =T;
+	T->height =max(GetHeight(T->lchild ),GetHeight(T->rchild ))+1;
+	lc->height =max(GetHeight(lc->lchild ),GetHeight(lc->rchild ))+1;
+	T=lc;
+	return 1;
+}
+bool R_Rotate(BiTree &T)//左单旋
+{
+	BiTree lc;
+	lc=T->rchild ;
+	T->rchild =lc->lchild ;
+	lc->lchild =T;
+	T->height =max(GetHeight(T->lchild ),GetHeight(T->rchild ))+1;
+	lc->height =max(GetHeight(lc->lchild ),GetHeight(lc->rchild ))+1;
+	T=lc;
+	return 1;
+}
+bool LR_Rotate(BiTree &T)//先左旋再右旋
+{
+	R_Rotate(T->lchild );
+	L_Rotate(T);
+	return 1;
+}
+bool RL_Rotate(BiTree &T)//先右旋再左旋
+{
+	L_Rotate(T->rchild );
+	R_Rotate(T);
+	return 1;
+}
+
+bool Insert_AVL(BiTree &T,int kval)//插入函数
+{
+	BiTree t;
+	if(T==NULL)
+	{
+		t=(BiTree)malloc(sizeof(BiTNode));
+		t->data =kval;
+		t->height =1;
+		t->lchild =NULL;
+		t->rchild =NULL;
+		T=t;
+		return 1;
+	}
+	else if(kval==T->data )
+			return 0;
+	else if(kval<T->data )//插入值小
+			{
+				if(Insert_AVL(T->lchild ,kval)==0)
+					return 0;
+				else
+				{
+					T->height =max(GetHeight(T->lchild ),GetHeight(T->rchild ))+1;
+					if(GetHeight(T->lchild )-GetHeight(T->rchild  )==2)
+						if(GetHeight(T->lchild->lchild  )>GetHeight(T->lchild->rchild  ))
+							L_Rotate(T);
+						else
+							LR_Rotate(T);
+				}
+				return 1;
+			}
+	else//插入值更大
+	{
+		if(!Insert_AVL(T->rchild ,kval))
+			return 0;
+		else
+		{
+		T->height =max(GetHeight(T->lchild ),GetHeight(T->rchild ))+1;
+		if(GetHeight(T->lchild )-GetHeight(T->rchild )==-2)
+		{
+			if(GetHeight(T->rchild ->lchild )>GetHeight(T->rchild->rchild  ))
+			{
+				RL_Rotate(T);
+			}
+			else
+				R_Rotate(T);
+		}
+		return 1;
+	}
+	}
+}
+void Delete(BiTree &p)
+{
+	BiTree q=NULL,s=NULL;
+	if(p->rchild ==NULL&&p->lchild ==NULL)//p为叶子节点
+	{
+		q=p;
+		p=NULL;
+		free(q);
+	}
+	else if(p->rchild ==NULL&&p->lchild !=NULL)//p的右子树为空左子树不为空
+	{
+		q=p;
+		p=p->lchild ;
+		free(q);
+	}
+	else if(p->rchild !=NULL&&p->lchild ==NULL)//p的右子树不为空左子树为空
+	{
+		q=p;
+		p=p->rchild ;
+		free(q);
+	}
+	else//p的左右子树都不为空
+	{
+		q=p;
+		s=p->lchild ;
+		while(s->rchild )
+		{
+			q=s;
+			s=s->rchild ;
+		}
+		p->data =s->data ;
+		if(q!=p)
+			q->rchild =s->lchild ;
+		else
+			q->lchild =s->lchild ;
+		free(s);
+	}
+}
+bool Delete_AVL(BiTree &T,int kval)//删除节点x
+{
+	BiTree pr,po;
+	if(T==NULL)
+		return 0;
+	else if(kval==T->data )//存在x并删除节点
+	{
+		if(T->lchild ==NULL&&T->rchild ==NULL)//为叶子节点
+			T=NULL;
+		else if(T->rchild ==NULL&&T->lchild !=NULL)//只有左孩子
+			T=T->lchild ;
+		else if(T->lchild ==NULL&&T->rchild !=NULL)//只有右孩子
+			T=T->rchild ;
+		else//既有左孩子又有右孩子
+		{
+			if(GetHeight(T->lchild )>GetHeight(T->rchild ))//当左子树比右子树高的时候
+			//为保证平衡性，先找到前驱pr然后用pr代替T然后删除pr
+			{
+				pr=T->lchild ;
+				while(pr->rchild!=NULL )
+					pr=pr->rchild ;
+				T->data =pr->data ;
+				Delete_AVL(T->lchild ,pr->data );
+			}
+			else//当右子树比左子树高的时候
+			//为保证平衡性，先找到后继po然后用po代替T在删除po
+			{
+				po=T->rchild ;
+				while(po->lchild !=NULL)
+				{
+					po=po->lchild ;
+				}
+				T->data =po->data ;
+				Delete_AVL(T->rchild ,po->data );
+			}
+		}
+			return 1;
+	}
+	else if(kval<T->data )//从左子树中删除
+	{
+		if(Delete_AVL(T->lchild ,kval)==0)//未删除
+			return 0;
+		else//删除成功，修改树的高度
+		{
+			T->height =T->height =max(GetHeight(T->lchild ),GetHeight(T->rchild ))+1;
+			if(GetHeight(T->lchild )-GetHeight(T->rchild )==-2)//判断是否需要旋转
+			{
+				if(GetHeight(T->rchild->lchild  )>GetHeight(T->rchild->rchild  ))
+				{
+					R_Rotate(T);
+				}
+				else
+					RL_Rotate(T);
+			}
+			return 1;
+		}
+	}
+	else//在右子树中删除
+	{
+		if(Delete_AVL(T->rchild ,kval)==0)
+		{
+			return 0;
+		}
+		else//删除成功修改树的高度
+		{
+			T->height =max(GetHeight(T->lchild ),GetHeight(T->rchild ))+1;
+			if(GetHeight(T->lchild->lchild  )-GetHeight(T->lchild->rchild  )==2)//判断是否需要旋转
+			{
+				if(GetHeight(T->lchild )>GetHeight(T->rchild))
+					L_Rotate(T);
+				else
+					LR_Rotate(T);
+			}
+			return 1;
+		}
+	}
+}
+char bra[]={" /\\<"};//根据每一个数对应一个符号
+//‘’ˉ代表的是叶子节点，'/'代表的是该节点只有右子树，'\'代表只有左子树，'<'代表既有左子树又有右子树
+
+void puttree(BiTree t,int h)//树形输出函数
+{
+	int i;
+	if(t!=NULL)
+	{
+		puttree(t->rchild ,h+1);//先输出最右端的数在最上方
+		for(i=0;i<h;i++)putchar('\t');//横向跳转
+		printf("%d",t->data);
+		putchar(bra[((NULL!=(t->lchild ))<<1)|(NULL!=(t->rchild ))]);
+		printf("\n");
+		puttree(t->lchild ,h+1);//再寻找左子树
+	}
+}
+void Inorder(BiTree T)
+{
+	if(T!=NULL)
+	{
+		Inorder(T->lchild);
+		printf("%d ",T->data);
+		Inorder(T->rchild);
+	}
+}
+int main()
+{
+	BiTree T=NULL;
+	int i;
+	char ch2;
+	int x,ch1;
+	printf("输入数列L构建平衡二叉树");
+	for(i=0;;i++)
+	{
+		scanf("%d%c",&ch1,&ch2);
+		Insert_AVL(T,ch1);
+		if(ch2=='\n')break;
+	}
+	printf("直观显示二叉树树形如下\n");
+	puttree(T,0);
+	printf("中序输出为\n");
+	Inorder(T);
+	printf("\n");
+	printf("输入元素x ");
+	scanf("%d",&x);
+	if(Delete_AVL(T,x)==1)
+	{
+		printf("存在x并删除\n");
+		Inorder(T);
+	}
+	else
+	{
+		printf("无x\n");
+		Insert_AVL(T,x);
+		Inorder(T);
+	}
+	return 0;
+}
+
